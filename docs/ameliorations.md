@@ -14,15 +14,30 @@ Légende : 🧠 IA/qualité · 🔒 sécurité · 🛠️ robustesse · 📦 out
 pentest ne sortent pas de la machine (souveraineté/confidentialité), usage
 air-gap, pas de coût ni de limite. Notre `llm_client` isolé est déjà prêt.
 
-- [ ] Ajouter un backend **Ollama** (ou endpoint local OpenAI-compatible) dans
-      `llm_client`, choisi par `.env` : `CYBER_LLM_PROVIDER=anthropic|ollama`.
-- [ ] **Garder l'API Claude** en option (backend configurable, pas un remplacement).
-- [ ] **Mesurer le tradeoff avec l'eval** : même banc sur le modèle local vs Claude
-      → score X/54 vs Y/54 (choix *mesuré*, argument Giskard).
-- [ ] Documenter : install Ollama, modèle conseillé, contraintes matérielles.
+**Décidé (design validé) :**
+- **Matériel cible :** GPU **8 Go VRAM** (RTX 2070 Max-Q) + **16 Go RAM** → un
+  modèle **7-8B tourne sur le GPU** (confortable).
+- **Modèle :** **Llama 3.1 8B** (quantifié Q4) par défaut ; alternative
+  **Qwen2.5 7B** → on **compare les deux + Claude** avec l'eval.
+- **Bascule :** au **lancement** uniquement — `.env`
+  `CYBER_LLM_PROVIDER=anthropic|ollama` (défaut) + flags `--local` / `--api` ;
+  moteur **affiché dans la bannière**. (Commande `moteur` en session = reportée.)
+
+**Plan technique (à coder) :**
+- [ ] `config.py` : `CYBER_LLM_PROVIDER` + `CYBER_LLM_MODEL` (Claude) +
+      `CYBER_LLM_MODEL_LOCAL` (ex. `llama3.1:8b`) + hôte Ollama.
+- [ ] `llm_client.ask()` : **aiguillage** → chemin anthropic (actuel, inchangé :
+      cache/thinking/effort/refus) **ou** chemin ollama (simple : `system` +
+      messages bruts). Même `Reponse(texte, succès)` → reste du code intact.
+      Gestion d'erreur « Ollama ne répond pas (`ollama serve`) ».
+- [ ] `cli.py` : flags `--local` / `--api` + moteur dans la bannière.
+- [ ] `requirements.txt` : paquet `ollama`.
+- [ ] `tests/` : **simuler** l'appel Ollama (comme Anthropic) → pytest sans modèle.
+- [ ] **Mesure** : lancer l'eval `--local` vs `--api`, comparer, consigner les scores.
+- [ ] Doc : install Ollama + `ollama pull llama3.1:8b` + contraintes matérielles.
 
 > Honnête : qualité locale < Claude (surtout respect du format) → l'eval le
-> chiffrera. Prévoir un modèle décent (7B–14B mini) et le matériel adapté.
+> chiffrera. Pour le test réel : installer Ollama + `ollama pull llama3.1:8b` (~5 Go).
 
 ---
 
